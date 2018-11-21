@@ -131,12 +131,7 @@ namespace Postulate.Merge.SqlServer
 				throw new FileNotFoundException($"Couldn't find file {fileName} in {path}. ({exc.Message})");
 			}
 		}
-
-		private async static Task<Database> GetConnectionDbAsync(string connectionString)
-		{
-			return await new SqlServerDbProvider().GetDatabaseAsync(connectionString);
-		}
-
+		
 		private static Database GetAssemblyDb(Settings settings)
 		{
 			throw new NotImplementedException();
