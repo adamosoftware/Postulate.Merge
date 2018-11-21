@@ -1,12 +1,16 @@
 ﻿using JsonSettings;
 using Postulate.Merge.Models;
+using Postulate.Merge.Models.Models;
 using SchemaSync.Library;
 using SchemaSync.Library.Models;
 using SchemaSync.SqlServer;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Postulate.Merge.SqlServer
@@ -37,17 +41,57 @@ namespace Postulate.Merge.SqlServer
 				var sourceDb = GetAssemblyDb(settings);
 
 				string connectionString = ResolveConnectionString(settings, path);
-				var targetDb = new SqlServerDbProvider().GetDatabaseAsync(connectionString).Result;
+				var targetProvider = new SqlServerDbProvider();
+				var targetDb = targetProvider.GetDatabaseAsync(connectionString).Result;
 				var diff = SchemaComparison.Execute(sourceDb, targetDb, settings.ExcludeObjects);
 
 				string scriptFile = Path.Combine(path, "Postulate.Merge.sql");
-				diff.SaveScript(new SqlServerSyntax(), scriptFile);
+				if (File.Exists(scriptFile)) File.Delete(scriptFile);
+				diff.SaveScript(targetProvider.GetDefaultSyntax(), scriptFile);
+				
+				RunScript(scriptFile, settings, connectionString);
 			}
 			catch (Exception exc)
 			{
 				Console.WriteLine(exc.Message);
 				Console.ReadLine();
 			}
+		}
+
+		private static void RunScript(string scriptFile, Settings settings, string connectionString)
+		{
+			if (string.IsNullOrEmpty(settings.CommandExe))
+			{
+				ProcessStartInfo psi = new ProcessStartInfo(scriptFile);
+				psi.UseShellExecute = true;
+				Process.Start(psi);
+				return;
+			}
+
+			ProcessStartInfo exe = new ProcessStartInfo(settings.CommandExe);
+			if (!string.IsNullOrEmpty(settings.CommandArguments))
+			{
+				exe.Arguments = ResolveArguments(settings.CommandArguments, connectionString);
+			}
+			Process.Start(exe);
+		}
+
+		/// <summary>
+		/// Inserts connection string components into command line arguments
+		/// </summary>
+		private static string ResolveArguments(string arguments, string connectionString)
+		{
+			string result = arguments;
+
+			var connectionInfo = ConnectionStrings.Parse(connectionString);
+			var matches = Regex.Matches(arguments, "(?<!{)({[^{\r\n]*})(?!{)");
+			foreach (Match match in matches)
+			{
+				string key = match.Value.Substring(1, match.Value.Length - 2);
+				result = result.Replace(match.Value, connectionInfo[key]);
+			}
+
+			return result;
 		}
 
 		private static string ResolveConnectionString(Settings settings, string path)
@@ -58,10 +102,34 @@ namespace Postulate.Merge.SqlServer
 					return settings.TargetConnection;
 
 				case TargetConnectionType.ConfigFile:
-					break;
+					var info = settings.GetTargetInfo();					
+					string configFile = FindFile(path, info.Filename);
+					Dictionary<string, string> connections = FindConnections(configFile);
+					return connections[info.ConnectionName];
 			}
 
+			throw new InvalidOperationException($"Unrecognized or not implemented target connection type {settings.TargetConnectionType}");
+		}
+
+		private static Dictionary<string, string> FindConnections(string configFile)
+		{
 			throw new NotImplementedException();
+		}
+
+		private static string FindFile(string path, string fileName)
+		{
+			string result = Path.Combine(path, fileName);
+			if (File.Exists(result)) return result;
+
+			try
+			{
+				string[] results = Directory.GetFiles(path, fileName, SearchOption.AllDirectories);
+				return results.First();
+			}
+			catch (Exception exc)
+			{
+				throw new FileNotFoundException($"Couldn't find file {fileName} in {path}. ({exc.Message})");
+			}
 		}
 
 		private async static Task<Database> GetConnectionDbAsync(string connectionString)
