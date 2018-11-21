@@ -2,12 +2,12 @@
 using Postulate.Merge.Models;
 using SchemaSync.Library;
 using SchemaSync.Library.Models;
+using SchemaSync.SqlServer;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Postulate.Lite;
-using Postulate.Lite.SqlServer;
+using System.Threading.Tasks;
 
 namespace Postulate.Merge.SqlServer
 {
@@ -17,22 +17,31 @@ namespace Postulate.Merge.SqlServer
 		{
 			try
 			{
-				string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-				if (args.Length == 0)
+				if ((args?.Length ?? 0) == 0)
 				{
-					CreateEmptySettingsFile(path);					
+					Console.WriteLine("A folder name (usually a solution folder) is required to run this command.");
 					return;
 				}
 
-				string fileName = Path.Combine(path, (args.Length > 1) ? args[1] : "Postulate.Merge.json");
-				var settings = JsonFile.Load<Settings>(fileName);
+				string path = args[0];
+				string settingsFile = Path.Combine(path, "Postulate.MergeSettings.json");
+
+				if (!File.Exists(settingsFile))
+				{
+					CreateEmptySettingsFile(path);
+					return;
+				}
+								
+				var settings = JsonFile.Load<Settings>(settingsFile);
 
 				var sourceDb = GetAssemblyDb(settings);
-				var targetDb = GetConnectionDb(settings);
+
+				string connectionString = ResolveConnectionString(settings, path);
+				var targetDb = new SqlServerDbProvider().GetDatabaseAsync(connectionString).Result;
 				var diff = SchemaComparison.Execute(sourceDb, targetDb, settings.ExcludeObjects);
-				
-				//diff.SaveScript(new SqlServerSyntax)
+
+				string scriptFile = Path.Combine(path, "Postulate.Merge.sql");
+				diff.SaveScript(new SqlServerSyntax(), scriptFile);
 			}
 			catch (Exception exc)
 			{
@@ -41,9 +50,23 @@ namespace Postulate.Merge.SqlServer
 			}
 		}
 
-		private static Database GetConnectionDb(Settings settings)
+		private static string ResolveConnectionString(Settings settings, string path)
 		{
+			switch (settings.TargetConnectionType)
+			{
+				case TargetConnectionType.ConnectionString:
+					return settings.TargetConnection;
+
+				case TargetConnectionType.ConfigFile:
+					break;
+			}
+
 			throw new NotImplementedException();
+		}
+
+		private async static Task<Database> GetConnectionDbAsync(string connectionString)
+		{
+			return await new SqlServerDbProvider().GetDatabaseAsync(connectionString);
 		}
 
 		private static Database GetAssemblyDb(Settings settings)

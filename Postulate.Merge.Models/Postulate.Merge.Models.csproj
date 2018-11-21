@@ -43,8 +43,8 @@
     <Reference Include="SchemaSync.Library, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SchemaSync.Library.1.0.2\lib\net461\SchemaSync.Library.dll</HintPath>
     </Reference>
-    <Reference Include="SchemaSync.Postulate, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SchemaSync.SqlServer.1.0.2\lib\net461\SchemaSync.Postulate.dll</HintPath>
+    <Reference Include="SchemaSync.SqlServer, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SchemaSync.SqlServer.1.0.3\lib\net461\SchemaSync.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
