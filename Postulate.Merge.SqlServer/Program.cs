@@ -1,17 +1,19 @@
 ﻿using JsonSettings;
+using Postulate.Lite.SqlServer;
 using Postulate.Merge.Models;
 using Postulate.Merge.Models.Models;
 using SchemaSync.Library;
 using SchemaSync.Library.Models;
+using SchemaSync.Postulate;
 using SchemaSync.SqlServer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace Postulate.Merge.SqlServer
 {
@@ -35,7 +37,7 @@ namespace Postulate.Merge.SqlServer
 					CreateEmptySettingsFile(path);
 					return;
 				}
-								
+
 				var settings = JsonFile.Load<Settings>(settingsFile);
 
 				var sourceDb = GetAssemblyDb(settings);
@@ -48,7 +50,7 @@ namespace Postulate.Merge.SqlServer
 				string scriptFile = Path.Combine(path, "Postulate.Merge.sql");
 				if (File.Exists(scriptFile)) File.Delete(scriptFile);
 				diff.SaveScript(targetProvider.GetDefaultSyntax(), scriptFile);
-				
+
 				RunScript(scriptFile, settings, connectionString);
 			}
 			catch (Exception exc)
@@ -102,18 +104,24 @@ namespace Postulate.Merge.SqlServer
 					return settings.TargetConnection;
 
 				case TargetConnectionType.ConfigFile:
-					var info = settings.GetTargetInfo();					
+					var info = settings.GetTargetInfo();
 					string configFile = FindFile(path, info.Filename);
-					Dictionary<string, string> connections = FindConnections(configFile);
+					var connections = FindConnections(configFile).ToDictionary(item => item.Name, item => item.ConnectionString);
 					return connections[info.ConnectionName];
 			}
 
 			throw new InvalidOperationException($"Unrecognized or not implemented target connection type {settings.TargetConnectionType}");
 		}
 
-		private static Dictionary<string, string> FindConnections(string configFile)
+		private static IEnumerable<NamedConnection> FindConnections(string fileName)
 		{
-			throw new NotImplementedException();
+			var doc = XDocument.Load(fileName);
+			var results = doc.XPathSelectElements("/configuration/connectionStrings/add");
+			return results.Select(e => new NamedConnection()
+			{
+				Name = e.Attribute("name").Value,
+				ConnectionString = e.Attribute("connectionString").Value
+			});
 		}
 
 		private static string FindFile(string path, string fileName)
@@ -131,10 +139,10 @@ namespace Postulate.Merge.SqlServer
 				throw new FileNotFoundException($"Couldn't find file {fileName} in {path}. ({exc.Message})");
 			}
 		}
-		
+
 		private static Database GetAssemblyDb(Settings settings)
 		{
-			throw new NotImplementedException();
+			return new PostulateDbProvider<SqlServerIntegrator>().GetDatabase(settings.SourceAssembly);
 		}
 
 		private static void CreateEmptySettingsFile(string path)
