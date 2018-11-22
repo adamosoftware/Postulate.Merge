@@ -37,14 +37,14 @@ namespace Postulate.Merge.Models
 		/// Program you use to view/execute .sql files
 		/// Leave blank to use shell execute behavior on .sql files
 		/// </summary>
-		public string CommandExe { get; set; }
+		public string CommandExe { get; set; } = "C:\\Program Files (x86)\\Microsoft SQL Server\\140\\Tools\\Binn\\ManagementStudio\\Ssms.exe";
 
 		/// <summary>
 		/// Arguments passed to CommandExe
 		/// For SSMS arguments, see https://docs.microsoft.com/en-us/sql/ssms/ssms-utility?view=sql-server-2017
 		/// Use connection string tokens (i.e. Data Source, Database, User Id, etc) enclosed in curly braces for variable insertion
 		/// </summary>
-		public string CommandArguments { get; set; }
+		public string CommandArguments { get; set; } = "\"%script_file%\" -S {Server} -d {Database} -E";
 
 		/// <summary>
 		/// Source objects to exclude

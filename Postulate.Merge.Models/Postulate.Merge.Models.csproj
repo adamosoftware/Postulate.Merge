@@ -40,8 +40,8 @@
     <Reference Include="Postulate.Lite.SqlServer, Version=1.2.6.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Postulate.Lite.SqlServer.1.2.6\lib\net461\Postulate.Lite.SqlServer.dll</HintPath>
     </Reference>
-    <Reference Include="SchemaSync.Library, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SchemaSync.Library.1.0.2\lib\net461\SchemaSync.Library.dll</HintPath>
+    <Reference Include="SchemaSync.Library, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SchemaSync.Library.1.0.3\lib\net461\SchemaSync.Library.dll</HintPath>
     </Reference>
     <Reference Include="SchemaSync.SqlServer, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SchemaSync.SqlServer.1.0.3\lib\net461\SchemaSync.SqlServer.dll</HintPath>

@@ -29,22 +29,28 @@ namespace Postulate.Merge.SqlServer
 					return;
 				}
 
+				const string settingsFilename = "Postulate.Merge.json";
 				string path = args[0];
-				string settingsFile = Path.Combine(path, "Postulate.MergeSettings.json");
+				string settingsFile = Path.Combine(path, settingsFilename);
 
 				if (!File.Exists(settingsFile))
 				{
-					CreateEmptySettingsFile(path);
+					CreateEmptySettingsFile(path, settingsFilename);
 					return;
 				}
 
 				var settings = JsonFile.Load<Settings>(settingsFile);
 
+				Console.WriteLine("Analyzing model classes...");
 				var sourceDb = GetAssemblyDb(settings);
 
 				string connectionString = ResolveConnectionString(settings, path);
 				var targetProvider = new SqlServerDbProvider();
+
+				Console.WriteLine("Analyzing target database...");
 				var targetDb = targetProvider.GetDatabaseAsync(connectionString).Result;
+
+				Console.WriteLine("Generating merge script...");
 				var diff = SchemaComparison.Execute(sourceDb, targetDb, settings.ExcludeObjects);
 
 				string scriptFile = Path.Combine(path, "Postulate.Merge.sql");
@@ -73,7 +79,7 @@ namespace Postulate.Merge.SqlServer
 			ProcessStartInfo exe = new ProcessStartInfo(settings.CommandExe);
 			if (!string.IsNullOrEmpty(settings.CommandArguments))
 			{
-				exe.Arguments = ResolveArguments(settings.CommandArguments, connectionString);
+				exe.Arguments = ResolveArguments(settings.CommandArguments, scriptFile, connectionString);
 			}
 			Process.Start(exe);
 		}
@@ -81,9 +87,11 @@ namespace Postulate.Merge.SqlServer
 		/// <summary>
 		/// Inserts connection string components into command line arguments
 		/// </summary>
-		private static string ResolveArguments(string arguments, string connectionString)
+		private static string ResolveArguments(string arguments, string scriptFile, string connectionString)
 		{
 			string result = arguments;
+
+			result = result.Replace("%script_file%", scriptFile);
 
 			var connectionInfo = ConnectionStrings.Parse(connectionString);
 			var matches = Regex.Matches(arguments, "(?<!{)({[^{\r\n]*})(?!{)");
@@ -145,7 +153,7 @@ namespace Postulate.Merge.SqlServer
 			return new PostulateDbProvider<SqlServerIntegrator>().GetDatabase(settings.SourceAssembly);
 		}
 
-		private static void CreateEmptySettingsFile(string path)
+		private static void CreateEmptySettingsFile(string path, string baseFile)
 		{
 			var settings = new Settings()
 			{
@@ -156,7 +164,7 @@ namespace Postulate.Merge.SqlServer
 					new ExcludeObject() { ActionType = ActionType.Create, Name = "Sample", Type = "Table" }
 				}
 			};
-			string fileName = Path.Combine(path, "Postulate.Merge.json");
+			string fileName = Path.Combine(path, baseFile);
 			if (File.Exists(fileName))
 			{
 				Console.WriteLine($"Settings file already exists: {fileName}");
