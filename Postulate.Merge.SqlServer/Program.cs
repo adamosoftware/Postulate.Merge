@@ -46,7 +46,7 @@ namespace Postulate.Merge.SqlServer
 				var settings = JsonFile.Load<Settings>(settingsFile);
 
 				Console.WriteLine("Analyzing model classes...");
-				var sourceDb = GetAssemblyDb(settings);
+				var sourceDb = new PostulateDbProvider<SqlServerIntegrator>().GetDatabase(settings.SourceAssembly);
 
 				string connectionString = ResolveConnectionString(settings, path);
 				var targetProvider = new SqlServerDbProvider();
