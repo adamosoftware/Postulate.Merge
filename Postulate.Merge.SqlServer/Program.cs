@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -28,6 +29,9 @@ namespace Postulate.Merge.SqlServer
 					Console.WriteLine("A folder name (usually a solution folder) is required to run this command.");
 					return;
 				}
+
+				var assembly = Assembly.GetExecutingAssembly();
+				Console.WriteLine($"Postulate.Merge.SqlServer version {assembly.GetName().Version}");
 
 				const string settingsFilename = "Postulate.Merge.json";
 				string path = args[0];
@@ -159,10 +163,7 @@ namespace Postulate.Merge.SqlServer
 			{
 				SourceAssembly = "your model class assembly dll",
 				TargetConnection = "target connection string",
-				ExcludeObjects = new HashSet<ExcludeObject>()
-				{
-					new ExcludeObject() { ActionType = ActionType.Create, Name = "Sample", Type = "Table" }
-				}
+				ExcludeObjects = GetAspNetUsersObjects()
 			};
 			string fileName = Path.Combine(path, baseFile);
 			if (File.Exists(fileName))
@@ -175,6 +176,28 @@ namespace Postulate.Merge.SqlServer
 				Console.WriteLine($"Empty settings file created: {fileName}");
 			}
 			Console.ReadLine();
+		}
+
+		private static HashSet<ExcludeObject> GetAspNetUsersObjects()
+		{
+			var items = new string[]
+			{
+				"dbo.AspNetUsers.Id",
+				"dbo.AspNetUsers.NormalizedUserName",
+				"dbo.AspNetUsers.NormalizedEmail",
+				"dbo.AspNetUsers.EmailConfirmed",
+				"dbo.AspNetUsers.PasswordHash",
+				"dbo.AspNetUsers.SecurityStamp",
+				"dbo.AspNetUsers.ConcurrencyStamp",
+				"dbo.AspNetUsers.PhoneNumber",
+				"dbo.AspNetUsers.PhoneNumberConfirmed",
+				"dbo.AspNetUsers.TwoFactorEnabled",
+				"dbo.AspNetUsers.LockoutEnd",
+				"dbo.AspNetUsers.LockoutEnabled",
+				"dbo.AspNetUsers.AccessFailedCount",
+			}.Select(s => new ExcludeObject() { Name = s, ActionType = ActionType.Drop, Type = "Column" });
+
+			return new HashSet<ExcludeObject>(items);
 		}
 	}
 }
