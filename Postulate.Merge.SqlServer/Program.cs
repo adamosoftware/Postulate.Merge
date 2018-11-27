@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -53,15 +54,54 @@ namespace Postulate.Merge.SqlServer
 
 				Console.WriteLine("Analyzing target database...");
 				var targetDb = targetProvider.GetDatabaseAsync(connectionString).Result;
+				
+				var syntax = targetProvider.GetDefaultSyntax();
+				bool anyDiff = false;
 
-				Console.WriteLine("Generating merge script...");
-				var diff = SchemaComparison.Execute(sourceDb, targetDb, settings.ExcludeObjects);
+				while (true)
+				{
+					Console.WriteLine("Looking for differences...");
+					var diff = SchemaComparison.Execute(sourceDb, targetDb, settings.ExcludeObjects);
+					if (diff.AnyDifferences())
+					{
+						anyDiff = true;
+						StringBuilder script = new StringBuilder();
+						var commands = diff.GetScriptCommands(syntax);
+						foreach (var cmd in commands) script.AppendLine(cmd);
 
-				string scriptFile = Path.Combine(path, "Postulate.Merge.sql");
-				if (File.Exists(scriptFile)) File.Delete(scriptFile);
-				diff.SaveScript(targetProvider.GetDefaultSyntax(), scriptFile);
+						Console.WriteLine(script.ToString());
 
-				RunScript(scriptFile, settings, connectionString);
+						Console.Write("Press Enter to execute, E to edit, T to save test case, any other key to cancel:");
+						var response = Console.ReadKey();
+						switch (response.Key)
+						{
+							case ConsoleKey.Enter:
+								var scriptRunner = new SqlScriptRunner(targetProvider);
+								scriptRunner.Run(connectionString, script.ToString());
+								break;
+
+							case ConsoleKey.E:
+								string scriptFile = Path.Combine(path, "Postulate.Merge.sql");
+								if (File.Exists(scriptFile)) File.Delete(scriptFile);
+								diff.SaveScript(syntax, scriptFile);
+								EditScript(scriptFile, settings, connectionString);
+								break;
+
+							case ConsoleKey.T:
+								string testCaseFile = Path.Combine(path, "Postulate.TestCase.json");
+								if (File.Exists(testCaseFile)) File.Delete(testCaseFile);
+								diff.SaveTestCase(testCaseFile);
+								Console.WriteLine($"Test case file {testCaseFile} was created. If you raise an issue on the SchemaSync repository (https://github.com/adamosoftware/SchemaSync), please attach the test case if appropriate.");
+								break;							
+						}
+					}
+					else
+					{
+						Console.WriteLine($"No {((anyDiff) ? "more " : string.Empty)}differences found.");
+						Console.ReadLine();
+						break;
+					}
+				}
 			}
 			catch (Exception exc)
 			{
@@ -70,7 +110,7 @@ namespace Postulate.Merge.SqlServer
 			}
 		}
 
-		private static void RunScript(string scriptFile, Settings settings, string connectionString)
+		private static void EditScript(string scriptFile, Settings settings, string connectionString)
 		{
 			if (string.IsNullOrEmpty(settings.CommandExe))
 			{
