@@ -82,11 +82,13 @@ namespace Postulate.Merge.SqlServer
 								return;
 
 							case ConsoleKey.Enter:
+								Console.WriteLine("Executing script...");
 								var scriptRunner = new SqlScriptRunner(targetProvider);
 								scriptRunner.Run(connectionString, script.ToString());
 								break;
 
 							case ConsoleKey.E:
+								Console.WriteLine($"Starting {Path.GetFileName(settings.CommandExe)}...");
 								string scriptFile = Path.Combine(path, "Postulate.Merge.sql");
 								if (File.Exists(scriptFile)) File.Delete(scriptFile);
 								diff.SaveScript(syntax, scriptFile);
@@ -98,6 +100,7 @@ namespace Postulate.Merge.SqlServer
 								if (File.Exists(testCaseFile)) File.Delete(testCaseFile);
 								diff.SaveTestCase(testCaseFile);
 								Console.WriteLine($"Test case file {testCaseFile} was created. If you raise an issue on the SchemaSync repository (https://github.com/adamosoftware/SchemaSync), please attach the test case if appropriate.");
+								Console.ReadLine();
 								return;						
 						}
 					}
