@@ -10,4 +10,4 @@ The free tool described here will merge model class changes to a SQL Server data
 
 - In Visual Studio, create an External Tool **Postulate Merge** pointing to the full path of **Postulate.Merge.SqlServer.exe** that you just installed. Add the argument **$(SolutionDir)**.
 
-- Run the **Postulate Merge** external tool to create a blank settings file in the current solution directory. The settings file is called **Postulate.Merge.json**.
+- Run the **Postulate Merge** external tool to create a blank settings file in the current solution directory. The settings file is called *Postulate.Merge.json*. Edit this json file to customize it for the current solution. For info about what you can put in a Settings file, please see the [Settings class](https://github.com/adamosoftware/Postulate.Merge/blob/master/Postulate.Merge.Models/Settings.cs) which has plenty of comments.
