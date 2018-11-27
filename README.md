@@ -16,4 +16,6 @@ The free tool described here will merge model class changes to a SQL Server data
 
 ## Typical Use
 
-- In a solution that has model classes that you must sync with a database, edit your model classes and build your project continuously as usual. After a build, use the **Postulate Merge** external tool to look for model changes to merge to your database. The console app will offer
+- In a solution that has model classes that you must sync with a database, edit your model classes and build your project continuously as usual. After a build, use the **Postulate Merge** external tool to look for model changes to merge to your database. The console app will show the generated SQL script. You can press Enter to execute, T to save a test case, or E to edit in the designated editor (Ssms by default).
+
+- Saving a test case will include schema information from your assembly and SQL Server database as well as the generated diff commands. If you find a bug, please submit an issue at the [SchemaSync](https://github.com/adamosoftware/SchemaSync) repository, and attach your test case. The test case content does not include any database data, but it does include your database schema information.
