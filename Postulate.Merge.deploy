@@ -2,7 +2,7 @@ DeployMaster Installation Script
 630
 Adam O'Neil Software
 https://aosoftware.net/
-Postulate.Merge
+Postulate.Merge for SQL Server
 https://github.com/adamosoftware/Postulate.Merge
 1.0.0
 TRUE
@@ -33,9 +33,9 @@ FALSE
 FALSE
 FALSE
 FALSE
-TRUE
-TRUE
-TRUE
+FALSE
+FALSE
+FALSE
 TRUE
 TRUE
 TRUE
@@ -204,7 +204,7 @@ FALSE
 -
 -
 0
-1
+0
 2
 TRUE
 Postulate.Merge
@@ -291,8 +291,8 @@ FALSE
 FALSE
 FALSE
 FALSE
-FALSE
-9
+TRUE
+5
 
 https://www.deploymaster.com/dotnetfx.html
 0
@@ -325,7 +325,7 @@ You are attempting to run the installer for %APP% %VERSION%.  This installer exp
 4095
 *.chm;*.png;*.jpg;*.gif;*.mp3;*.avi;*.zip
 
-Setup.exe
+PostulateMergeSetup.exe
 
 FALSE
 
